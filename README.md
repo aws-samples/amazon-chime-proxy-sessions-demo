@@ -74,7 +74,7 @@ In this section, you will learn how to setup a simple web app written in the [Re
 4. Open your browser and navigate to [http://localhost:3000](http://localhost:3000/) to start testing
 ![Chime Proxy Demo Homepage](chimeproxy-frontend/homepage.png "Chime Proxy Demo Homepage")
 
-5. Click on **Set Up Proxy Phone Session** to set up a proxy phone session between the 2 phone numbers you provided in the backend section.
+5. Click on **Set Up Proxy Phone Session** to set up a proxy phone session between the 2 phone numbers you provided in the backend section.<br/>
 
 ![Chime Proxy Demo Results](chimeproxy-frontend/results.png "Chime Proxy Demo Homepage")
 
