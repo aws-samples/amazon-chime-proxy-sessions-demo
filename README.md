@@ -75,6 +75,7 @@ In this section, you will learn how to setup a simple web app written in the [Re
 ![Chime Proxy Demo Homepage](chimeproxy-frontend/homepage.png "Chime Proxy Demo Homepage")
 
 5. Click on **Set Up Proxy Phone Session** to set up a proxy phone session between the 2 phone numbers you provided in the backend section.
+
 ![Chime Proxy Demo Results](chimeproxy-frontend/results.png "Chime Proxy Demo Homepage")
 
 ## Clean up
