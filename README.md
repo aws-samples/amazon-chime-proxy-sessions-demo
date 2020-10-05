@@ -1,3 +1,7 @@
+## Overview
+In this sample, you will explore a use case where a plumbing company uses fake numbers to connect a customer with their plumber. You will do this by leveraging Amazon Chime's proxy phone sessions, which you can learn more about in a previous [blog post](https://aws.amazon.com/blogs/business-productivity/mask-user-phone-numbers-using-amazon-chime-proxy-phone-sessions/) about masking user phone numbers.
+
+This repo provides an [AWS CloudFormation](https://aws.amazon.com/cloudformation/) template to set up your [Amazon Chime](https://aws.amazon.com/chime/chime-sdk/) voice connector, uses the [serverless framework](https://serverless.com) to set up a backend API for setting up proxy sessions in Amazon Chime, and provides a front-end application written in [React framework ](https://reactjs.org/) to demo this functionality.
 
 ### Pre-requisites
 Set up an Amazon Chime Voice Connector in your AWS account. This repo provides an AWS CloudFormation template (`/templates/voice-connector-setup.yaml`) to set up your Amazon Chime voice connector.
