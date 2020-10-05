@@ -1,0 +1,130 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this
+# software and associated documentation files (the "Software"), to deal in the Software
+# without restriction, including without limitation the rights to use, copy, modify,
+# merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+Description: >
+    AWS CloudFormation template to create an Amazon Chime Voice Connector.
+    Amazon Chime Voice Connector helps you make phone calls using your existing SIP infrastructure.
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+    Region:
+        Type: String
+        Default: us-east-1
+        Description:  Name of the AWS region where you want to create an Amazon Chime Voice Connector
+        AllowedValues: ['us-east-1', 'us-west-2']
+    VoiceConnectorName:
+        Type: String
+        Default: 'voice-connector-demo-01' 
+        Description:  Name of the Amazon Chime Voice Connector to be created
+    EnableEncryption:
+        Type: String
+        Default:  'False'
+        Description:  Choose if you want to enable encryption for the voice connector
+        AllowedValues: ['True', 'False']
+    
+Outputs:
+    VoiceConnectorName:
+        Description:  Name of the Amazon Chime Voice Connector created in this process
+        Value: !Ref VoiceConnectorName
+    VoiceConnectorId:
+        Description:  The Amazon Chime Voice Connector ARN created in this process
+        Value: !GetAtt VoiceConnectorLambdaInvoke.VoiceConnectorId
+    OutboundHostName:
+        Description: The Amazon Chime Voice Connector outbound host name
+        Value: !GetAtt VoiceConnectorLambdaInvoke.OutboundHostName
+Resources:
+    VoiceConnectorLambdaInvoke:
+      Type: Custom::VoiceConnectorLambda
+      Version: "1.0"
+      Properties:
+        ServiceToken: !GetAtt VoiceConnectorLambda.Arn
+    VoiceConnectorLambda:
+      Type: AWS::Lambda::Function
+      Properties:
+        Handler: index.handler
+        Role: !GetAtt VoiceConnectorLambdaRole.Arn
+        Description: Invoke a function to create an Amazon Chime Voice Connector
+        Runtime: python3.6
+        Environment:
+            Variables:
+                "VOICE_CONNECTOR_NAME": !Ref VoiceConnectorName
+                "ENABLE_ENCRYPTION": !Ref EnableEncryption
+                "REGION": !Ref Region
+        Code:
+          ZipFile: |
+                import os
+                import sys
+                import cfnresponse
+                import boto3
+                import botocore
+                import pprint
+
+                chime_client = boto3.client('chime')
+                pp = pprint.PrettyPrinter(indent=4)
+
+                def handler(event, context):
+                    print("\nNEW VOICE CONNECTOR CREATION EVENT:\n")
+                    print(event)
+                    response = ''
+                    responseData = {}
+                    encryption_required = (os.environ['ENABLE_ENCRYPTION'] == 'True')
+                    
+                    try:
+                        response = chime_client.create_voice_connector(
+                            Name=os.environ['VOICE_CONNECTOR_NAME'],
+                            AwsRegion=os.environ['REGION'],
+                            RequireEncryption= encryption_required
+                        )
+                        responseData = {"VoiceConnectorId": response['VoiceConnector']['VoiceConnectorId'], "OutboundHostName": response['VoiceConnector']['OutboundHostName']}
+                        cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData, "CustomResourcePhysicalID")
+                        return pp.pprint(response['VoiceConnector']);
+                    except botocore.exceptions.ClientError as e:
+                        print("Exception occured while creating the voice connector: ", e)
+                        cfnresponse.send(event, context, cfnresponse.FAILED, responseData, "CustomResourcePhysicalID")
+                        sys.exit(1) 
+                    
+                    return(response['VoiceConnector'])
+
+    VoiceConnectorLambdaRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+          AssumeRolePolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: "Allow"
+                Principal:
+                  Service:
+                    - "lambda.amazonaws.com"
+                Action:
+                  - "sts:AssumeRole"
+          ManagedPolicyArns:
+            - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+          Path: "/"
+          Policies:
+            -
+              PolicyName: create-voice-connector
+              PolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                  -
+                    Effect: "Allow"
+                    Action:
+                      - "chime:ListVoiceConnectors"
+                      - "chime:GetVoiceConnector"
+                      - "chime:CreateVoiceConnectorGroup"
+                      - "chime:CreateVoiceConnector"
+                      - "chime:ListVoiceConnectorGroups"
+                      - "chime:GetVoiceConnectorGroup"
+                    Resource: "*"
+    

@@ -1,0 +1,31 @@
+service: aws-chime-proxycalling
+plugins:
+  - serverless-dotenv-plugin
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: dev
+  region: us-east-1
+  iamManagedPolicies:
+    - "arn:aws:iam::aws:policy/AmazonChimeFullAccess"
+    - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+functions:
+  app:
+    handler: index.handler
+    events:
+      - http:
+          path: /
+          method: get
+          cors: true
+      - http:
+          path: proxySession/
+          method: post
+          cors: true
+      - http:
+          path: proxySession/{proxySessionId}
+          method: get
+          cors: true
+      - http:
+          path: proxySession/{proxySessionId}
+          method: delete
+          cors: true

@@ -1,0 +1,55 @@
+.App {
+  text-align: center;
+  min-height: 100vh;
+  background-color: #282c34;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+.App-header {
+  display: flex;
+  padding: 30px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  font-weight: bold;
+  color: white;
+}
+
+.App-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: #61dafb 
+}
+
+.App-link {
+  color: #61dafb;
+}
+.Result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #61dafb;
+}
+
+.Error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #61dafb;
+}
+
+.Loading {
+  display: flex;
+  padding: 150px;
+  flex-direction: column;
+  align-items: center;
+  color: #61dafb;
+}

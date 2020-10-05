@@ -1,0 +1,147 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this
+# software and associated documentation files (the "Software"), to deal in the Software
+# without restriction, including without limitation the rights to use, copy, modify,
+# merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+# PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+# HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+# SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+Description: >
+    AWS CloudFormation template to enable an Amazon Chime Voice Connector to send media to Kinesis Video Streams for recording.
+    This template will also set up the Kinesis Video Streams to send audio recordings from the voice connector to an S3 bucket.
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+    Region:
+        Type: String
+        Default: us-east-1
+        Description:  Name of the AWS region where you want to create an Amazon Chime Voice Connector
+        AllowedValues: ['us-east-1', 'us-west-2']
+    VoiceConnectorId:
+        Type: String
+        Description:  ID of the Amazon Chime Voice Connector that needs to be sent to Kinesis Video Streams for recording
+    DataRetentionHours:
+        Type: Number
+        Default: 72
+        Description:  Enter the number of hours to retain call media in Kinesis Video Streams.  Cost is based on bandwidth and total storage used. You can modify data retention at any time. 
+    StreamingNotificationTarget:
+        Type: String
+        Default: SQS
+        Description:  Streaming Target for Kinesis Video Streams for recording
+        AllowedValues: ['EventBridge','SNS','SQS']
+Outputs:
+    Response:
+        Description: The Amazon Chime Voice Connector outbound host name
+        Value: !GetAtt VoiceConnectorRecordingLambdaInvoke.Message
+Resources:
+    ChimeServiceLinkedRole:
+      Type: AWS::IAM::ServiceLinkedRole
+      Properties: 
+        AWSServiceName: voiceconnector.chime.amazonaws.com
+        Description: "Role to enable Amazon Chime to manage resources in your account."
+    VoiceConnectorRecordingLambdaInvoke:
+      Type: Custom::VoiceConnectorRecordingLambda
+      Version: "1.0"
+      Properties:
+        ServiceToken: !GetAtt VoiceConnectorRecordingLambda.Arn
+    VoiceConnectorRecordingLambda:
+      Type: AWS::Lambda::Function
+      DependsOn: VoiceConnectorRecordingLambdaRole
+      Properties:
+        Handler: index.handler
+        Role: !GetAtt VoiceConnectorRecordingLambdaRole.Arn
+        Description: Invoke a function to enable Amazon Chime voice connector media streaming of audio calls to a Kinesis Video Stream
+        Runtime: python3.6
+        Environment:
+            Variables:
+                "VOICE_CONNECTOR_ID": !Ref VoiceConnectorId
+                "DATA_RETENTION_HOURS": !Ref DataRetentionHours
+                "REGION": !Ref Region
+                "STREAMING_TARGET": !Ref StreamingNotificationTarget
+        Code:
+          ZipFile: |
+                import os
+                import sys
+                import cfnresponse
+                import boto3
+                import botocore
+                import pprint
+
+                chime_client = boto3.client('chime')
+                pp = pprint.PrettyPrinter(indent=4)
+
+                def handler(event, context):
+                    print("\nNEW VOICE CONNECTOR RECORDING CONFIG EVENT:\n")
+                    print(event)
+                    response = ''
+                    responseData = {}                    
+                    try:
+                        response = chime_client.put_voice_connector_streaming_configuration(
+                            VoiceConnectorId=os.environ['VOICE_CONNECTOR_ID'],
+                            StreamingConfiguration={
+                                'DataRetentionInHours': int(os.environ['DATA_RETENTION_HOURS']),
+                                'Disabled': False,
+                                'StreamingNotificationTargets': [
+                                    {
+                                        'NotificationTarget': os.environ['STREAMING_TARGET']
+                                    },
+                                ]
+                            }
+                        )
+                        responseData = {"Message": "Success"}
+                        cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData, "CustomResourcePhysicalID")
+                        return pp.pprint(response);
+                    except botocore.exceptions.ClientError as e:
+                        print("Exception occured while creating the voice connector: ", e)
+                        responseData = {"Message": "Exception occured, check logs."}
+                        cfnresponse.send(event, context, cfnresponse.FAILED, responseData, "CustomResourcePhysicalID")
+                        sys.exit(1) 
+                    return(response)
+
+    VoiceConnectorRecordingLambdaRole:
+        Type: "AWS::IAM::Role"
+        Properties:
+          AssumeRolePolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: "Allow"
+                Principal:
+                  Service:
+                    - "lambda.amazonaws.com"
+                Action:
+                  - "sts:AssumeRole"
+          ManagedPolicyArns:
+            - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+            - arn:aws:iam::aws:policy/AmazonSQSFullAccess
+            - arn:aws:iam::aws:policy/AmazonSNSFullAccess
+            - arn:aws:iam::aws:policy/AmazonEventBridgeFullAccess
+          Path: "/"
+          Policies:
+            -
+              PolicyName: put-voice-connector-streaming-config
+              PolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                  -
+                    Effect: "Allow"
+                    Action:
+                      - "chime:PutVoiceConnectorStreamingConfiguration" 
+                    Resource: "*"
+                  -
+                    Effect: "Allow"
+                    Action:
+                      - "iam:CreateServiceLinkedRole" 
+                    Resource: "*" 
+                  -
+                    Effect: "Allow"
+                    Action:
+                      - "iam:AttachRolePolicy" 
+                      - "iam:PutRolePolicy" 
+                    Resource: "*"
+    
