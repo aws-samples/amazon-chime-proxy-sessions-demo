@@ -52,7 +52,7 @@ class App extends React.Component {
       {/* FORM */}
         {!this.state.isLoading && !this.state.isResult && this.state.errorMessage === null && (
           <div>
-          <Header companyName="Puppies Plumbing Inc."></Header>
+          <Header companyName="AnyCompany Plumbing"></Header>
           <Form onSubmit={this.handleSubmit}></Form>
           </div>
           )
@@ -60,7 +60,7 @@ class App extends React.Component {
         {/* RESULTS */}
         {this.state.isResult && !this.state.isLoading && this.state.errorMessage === null && (
           <div>
-            <Header companyName="Puppies Plumbing Inc."></Header>
+            <Header companyName="AnyCompany Plumbing"></Header>
             <Result proxySession = {this.state.proxySession} resetPage={this.resetPage}/>
           </div>
         )}
