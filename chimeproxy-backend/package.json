@@ -1,21 +1,21 @@
 {
-  "name": "chimeproxy-backend-demo",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "aws-sdk": "^2.814.0",
-    "body-parser": "^1.19.0",
-    "express": "^4.17.1",
-    "libphonenumber-js": "^1.7.57",
-    "serverless": "^2.3.0",
-    "serverless-dotenv-plugin": "^3.0.0",
-    "serverless-http": "^2.5.0"
-  }
+    "name": "chimeproxy-backend-demo",
+    "version": "1.0.2",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "aws-sdk": "^2.814.0",
+        "body-parser": "^1.19.0",
+        "express": "^4.17.1",
+        "libphonenumber-js": "^1.7.57",
+        "serverless": "^3.21.0",
+        "serverless-dotenv-plugin": "^3.0.0",
+        "serverless-http": "^2.5.0"
+    }
 }
